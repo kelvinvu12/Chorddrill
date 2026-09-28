@@ -209,6 +209,49 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
 .midi-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .midi-pill.hit::before{box-shadow:0 0 0 3px var(--good-soft),0 0 0 5px var(--good)}
 #midiStatus b{color:var(--ink)}
+
+/* Speed test */
+.test-btn{display:inline-flex;align-items:baseline;gap:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font:700 .88rem var(--sans);padding:7px 14px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.test-btn small{font-weight:600;font-size:.72rem;opacity:.8}
+body.testing .test-btn{background:transparent;color:var(--bad);border-color:var(--bad)}
+body.testing .controls, body.testing .foot, body.testing .set-toggle{display:none!important}
+body.testing .tabs{opacity:.45;pointer-events:none}
+.testbar{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--accent);border-radius:12px;padding:8px 14px;font-variant-numeric:tabular-nums}
+.tb-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;white-space:nowrap}
+.tb-count{font-size:1rem;white-space:nowrap}
+.tb-prog{flex:1;min-width:40px;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.tb-prog i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .25s}
+.tb-right{font-size:.85rem;color:var(--muted);white-space:nowrap}
+.tb-clock{font-size:1rem;min-width:3.2em;text-align:right}
+.result{gap:14px}
+.tr-hero{display:flex;justify-content:center;align-items:flex-end;gap:36px;flex-wrap:wrap;text-align:center;font-variant-numeric:tabular-nums}
+.tr-hero > div{display:flex;flex-direction:column;align-items:center}
+.tr-main b{font-family:var(--hand);font-weight:700;font-size:clamp(3rem,12vw,4.4rem);line-height:1;color:var(--accent)}
+.tr-side b{font-family:var(--hand);font-weight:700;font-size:2.2rem;line-height:1}
+.tr-hero span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.tr-best{text-align:center;font-weight:600;color:var(--brass);min-height:1.2em}
+.tr-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0;font-variant-numeric:tabular-nums}
+.tr-stats div{background:var(--surface-2);border-radius:10px;padding:8px 6px;text-align:center}
+.tr-stats dt{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tr-stats dd{margin:0;font-weight:700;font-size:1.05rem}
+.tr-missed{font-size:.88rem;color:var(--muted);text-align:center}
+.tr-missed b{color:var(--bad);font-weight:600}
+.tr-actions{flex-wrap:wrap;align-items:center}
+.as-link{text-decoration:none;display:inline-flex;align-items:center}
+.tr-status{text-align:center;font-size:.88rem;min-height:1.3em;color:var(--muted)}
+.tr-status.good{color:var(--good);font-weight:600}
+.tr-status.bad{color:var(--bad)}
+.tr-status a{color:var(--accent)}
+@media (max-width:460px){ .tr-stats{grid-template-columns:repeat(2,minmax(0,1fr))} .testbar{gap:8px;padding:8px 10px} .tb-label{display:none} }
+@media (orientation:landscape) and (max-height:520px){
+  .test-btn{padding:5px 11px;font-size:.82rem}
+  .testbar{padding:5px 12px}
+  .result{padding:12px 16px;gap:8px}
+  .tr-main b{font-size:2.8rem}
+  .tr-side b{font-size:1.8rem}
+  .tr-stats dd{font-size:.95rem}
+  .tr-stats div{padding:5px 6px}
+}
 </style>
 
 <div class="wrap">
@@ -229,8 +272,17 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
       <div class="stat"><b id="gAvg">–</b><span>Avg time</span></div>
     </div>
     <span class="midi-pill" id="midiPill" hidden>MIDI</span>
+    <button type="button" class="test-btn" id="testBtn">Speed test <small>25 Qs</small></button>
     <button type="button" class="set-toggle" id="setToggle" aria-expanded="false" aria-controls="controls">Settings</button>
   </header>
+
+  <div class="testbar" id="testBar" hidden aria-live="polite">
+    <span class="tb-label">Speed test</span>
+    <b class="tb-count" id="tbCount">1 / 25</b>
+    <div class="tb-prog" aria-hidden="true"><i id="tbFill"></i></div>
+    <span class="tb-right" id="tbRight">0 correct</span>
+    <b class="tb-clock" id="tbClock">0:00</b>
+  </div>
 
   <nav class="tabs" id="tabs" aria-label="Drill">
     <button type="button" data-v="dia">Diatonic chords</button>
@@ -357,6 +409,30 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
       <button type="button" class="ghost" id="gtClear">Clear</button>
       <button type="button" class="next" id="gtNext" hidden>Next ›</button>
     </div>
+  </section>
+
+  <section class="card result" id="testResult" hidden aria-live="polite">
+    <div class="eyebrow" id="trEyebrow">Speed test</div>
+    <div class="tr-hero">
+      <div class="tr-main"><b id="trAvg">–</b><span>Average per question</span></div>
+      <div class="tr-side"><b id="trScore">–</b><span>Correct</span></div>
+    </div>
+    <div class="tr-best" id="trBest"></div>
+    <dl class="tr-stats">
+      <div><dt>Fastest</dt><dd id="trFast">–</dd></div>
+      <div><dt>Slowest</dt><dd id="trSlow">–</dd></div>
+      <div><dt>Total</dt><dd id="trTotal">–</dd></div>
+      <div><dt>Accuracy</dt><dd id="trAcc">–</dd></div>
+    </dl>
+    <div class="tr-missed" id="trMissed" hidden></div>
+    <div class="actions tr-actions">
+      <button type="button" class="next" id="trSave">Save to Notion</button>
+      <a class="next as-link" id="trClaude" href="#" target="_blank" rel="noopener" hidden>Log in Notion via Claude</a>
+      <button type="button" class="ghost" id="trCopy">Copy result</button>
+      <button type="button" class="ghost" id="trAgain">Run again</button>
+      <button type="button" class="linkbtn" id="trClose">Done</button>
+    </div>
+    <div class="tr-status" id="trStatus"></div>
   </section>
 
   <div class="foot" id="footDia">
@@ -488,7 +564,7 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
       $('big').textContent=chord(k,d);
       $('ask').innerHTML='Which degree is <strong>'+chord(k,d)+'</strong> in <strong>'+pretty(k)+'</strong>?';
     }
-    S.q={k,d,qm,answer};
+    S.q={k,d,qm,answer,t0:performance.now()};
     choices.forEach((c,i)=>{
       const b=document.createElement('button'); b.type='button'; b.className='opt'; b.id='opt'+i;
       b.innerHTML='<span class="kbd">'+(i+1)+'</span>'+c;
@@ -498,7 +574,8 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
 
   function answer_(btn){
     if(S.answered) return; S.answered=true;
-    const {k,d,answer}=S.q; const ok = btn.dataset.v===answer;
+    const {k,d,qm,answer}=S.q; const ok = btn.dataset.v===answer;
+    const secs=(performance.now()-S.q.t0)/1000;
     S.total++; S.tries[d]++;
     if(ok){ S.right++; S.streak++; if(S.streak>S.best){S.best=S.streak; store.set('best',S.best);} }
     else { S.streak=0; S.misses[d]++; }
@@ -522,6 +599,8 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
     }
     $('reveal').hidden=false; $('next').hidden=false;
     drawStats();
+    const desc = qm==='deg2chord' ? qlab(d)+' in '+pretty(k)+' → '+ch : ch+' in '+pretty(k)+' → '+nm;
+    if(window.__testRecord && window.__testRecord(ok, secs, desc)) return;
     if(ok && S.speed>=0){
       if(S.speed===0) newQ(); else S.timer=setTimeout(newQ, S.speed);
     }
@@ -794,6 +873,7 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
       + extra;
     $('gtNotes').hidden=false;
     $('gtNext').hidden=false;
+    if(window.__testRecord && window.__testRecord(ok, secs, chordName+' · Type '+vt+' → '+third.name+' + '+seventh.name)) return;
     if(ok && S.speed>=0){ if(S.speed===0) newGT(); else G.timer=setTimeout(newGT, S.speed); }
   }
 
@@ -954,6 +1034,183 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
     $('next').addEventListener('click',()=>setTimeout(showPlayed,0));
     new MutationObserver(()=>{ if(!S.answered) showPlayed(); }).observe($('options'),{childList:true});
     if(store.get('midi',false)) connect(true);
+  })();
+
+  /* ---------------- Speed test (25 questions) ---------------- */
+  (function(){
+    const N = 25;
+    const NOTION_DS = '2c825217-8b0b-449f-bfb6-dbaa6485eaf8';
+    const T = { active:false, drill:'dia', res:[], start:0, clock:null, lastQ:null, advT:null, summary:null, saved:false };
+    let MCP = null;
+    try{ if(window.claude && typeof window.claude.use==='function') window.claude.use('mcp').then(m=>{ MCP=m; }).catch(()=>{}); }catch(e){}
+
+    const fmt = s => s.toFixed(2)+' s';
+    const clockTxt = ms => { const t=Math.floor(ms/1000); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); };
+    const curQ = () => T.drill==='gt' ? G.q : S.q;
+
+    function settingsText(){
+      const keys=[...S.keys].map(pretty).join(' ');
+      if(T.drill==='gt'){
+        const vt={A:'Type A',B:'Type B',alt:'Alternate A/B',either:'Either'}[G.vtype]||G.vtype;
+        return 'Chords: '+GQ_ORDER.filter(q=>G.quals.has(q)).map(q=>'C'+GQ[q].sym[S.sym]).join(' ')+' · Voicing: '+vt+' · Roots: '+keys;
+      }
+      const mode={deg2chord:'Degree → Chord',chord2deg:'Chord → Degree',mixed:'Mixed'}[S.mode];
+      return 'Question: '+mode+' · '+(S.type==='seventh'?'7th chords':'Triads')+' · Degrees: '+[...S.degs].sort().map(i=>ROMAN[i]).join(' ')+' · Keys: '+keys;
+    }
+    function paintBar(){
+      const done=T.res.length, right=T.res.filter(r=>r.ok).length;
+      $('tbCount').textContent = Math.min(done+1,N)+' / '+N;
+      $('tbFill').style.width = (done/N*100)+'%';
+      $('tbRight').textContent = right+' correct';
+    }
+    function begin(){
+      clearTimeout(T.advT); clearTimeout(S.timer); clearTimeout(G.timer);
+      T.active=true; T.drill=TAB; T.res=[]; T.saved=false;
+      document.body.classList.add('testing');
+      $('testResult').hidden=true; $('testBar').hidden=false;
+      $('testBtn').innerHTML='Stop test';
+      if(TAB==='gt'){ $('gtCard').hidden=false; newGT(); } else { $('card').hidden=false; newQ(); }
+      T.start=performance.now();
+      paintBar(); $('tbClock').textContent='0:00';
+      clearInterval(T.clock); T.clock=setInterval(()=>{ $('tbClock').textContent=clockTxt(performance.now()-T.start); },250);
+      window.scrollTo(0,0);
+    }
+    function end(){
+      T.active=false; clearInterval(T.clock); clearTimeout(T.advT);
+      document.body.classList.remove('testing');
+      $('testBar').hidden=true;
+      $('testBtn').innerHTML='Speed test <small>25 Qs</small>';
+    }
+    function stop(){ end(); setTab(TAB); window.__refresh(); }
+
+    window.__testRecord = function(ok, secs, desc){
+      if(!T.active) return false;
+      T.res.push({ok, secs, desc});
+      paintBar();
+      const q = curQ(); T.lastQ = q;
+      clearTimeout(T.advT);
+      T.advT = setTimeout(()=>{
+        if(!T.active) return;
+        if(T.res.length>=N){ finish(); return; }
+        if(curQ()!==q) return;            // already moved on (Next, Enter or sustain pedal)
+        T.drill==='gt' ? newGT() : newQ();
+      }, ok ? 350 : 1600);
+      return true;
+    };
+
+    function finish(){
+      const total=(performance.now()-T.start)/1000;
+      end();
+      const times=T.res.map(r=>r.secs), right=T.res.filter(r=>r.ok).length;
+      const avg=times.reduce((a,b)=>a+b,0)/times.length;
+      const drillName = T.drill==='gt' ? 'Guide tones' : 'Diatonic chords';
+      const hist = store.get('tests',[]);
+      const prev = hist.filter(h=>h.drill===drillName);
+      const bestPrev = prev.length ? Math.min(...prev.map(h=>h.avg)) : null;
+      const now = new Date();
+      T.summary = {
+        date: now, drill: drillName, score: right, acc: right/N, avg, total,
+        fast: Math.min(...times), slow: Math.max(...times),
+        settings: settingsText(), missed: T.res.filter(r=>!r.ok).map(r=>r.desc)
+      };
+      hist.push({t:now.getTime(), drill:drillName, score:right, avg:+avg.toFixed(3)});
+      store.set('tests', hist.slice(-100));
+
+      $('card').hidden=true; $('gtCard').hidden=true;
+      $('trEyebrow').textContent='Speed test · '+drillName+' · 25 questions';
+      $('trAvg').textContent=fmt(avg);
+      $('trScore').textContent=right+'/'+N;
+      $('trFast').textContent=fmt(T.summary.fast);
+      $('trSlow').textContent=fmt(T.summary.slow);
+      $('trTotal').textContent=clockTxt(total*1000);
+      $('trAcc').textContent=Math.round(right/N*100)+'%';
+      $('trBest').textContent = bestPrev==null ? 'First '+drillName.toLowerCase()+' test on this device.'
+        : avg<bestPrev ? 'New best average! Previous best '+fmt(bestPrev)+'.'
+        : 'Your best on this device: '+fmt(bestPrev)+'.';
+      const m=$('trMissed');
+      if(T.summary.missed.length){ m.hidden=false; m.innerHTML='Missed: '+T.summary.missed.map(x=>'<b>'+x.replace(/</g,'&lt;')+'</b>').join(' · '); }
+      else { m.hidden=true; }
+      setupSave();
+      $('testResult').hidden=false;
+      window.scrollTo(0,0);
+    }
+
+    function localIso(d){
+      const pad=n=>String(n).padStart(2,'0'), o=-d.getTimezoneOffset(), sg=o>=0?'+':'-', ao=Math.abs(o);
+      return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+sg+pad(Math.floor(ao/60))+':'+pad(ao%60);
+    }
+    function resultText(){
+      const r=T.summary, when=r.date.toLocaleString('en-AU',{dateStyle:'medium',timeStyle:'short'});
+      return 'Chord Drill speed test, '+when+'\n'
+        +'Drill: '+r.drill+'\nScore: '+r.score+'/'+N+' ('+Math.round(r.acc*100)+'%)\n'
+        +'Average time: '+r.avg.toFixed(2)+' s per question\nFastest: '+r.fast.toFixed(2)+' s · Slowest: '+r.slow.toFixed(2)+' s · Total: '+clockTxt(r.total*1000)+'\n'
+        +'Settings: '+r.settings+'\n'
+        +'Missed: '+(r.missed.length ? r.missed.join('; ') : 'none');
+    }
+    function setStatus(html, cls){ const el=$('trStatus'); el.className='tr-status'+(cls?' '+cls:''); el.innerHTML=html; }
+
+    function setupSave(){
+      setStatus('');
+      const save=$('trSave'), link=$('trClaude');
+      if(MCP){
+        save.hidden=false; link.hidden=true;
+        save.disabled=false; save.textContent='Save to Notion';
+      } else {
+        // Outside Claude (e.g. GitHub Pages): hand the result to a new Claude chat, which can write to Notion
+        save.hidden=true; link.hidden=false;
+        const prompt='Add this Chord Drill speed test as a new row in my Notion database "Speed Tests" (under Novu Jazz Academy, data source collection://'+NOTION_DS+'). Use Date '+localIso(T.summary.date)+'.\n\n'+resultText();
+        link.href='https://claude.ai/new?q='+encodeURIComponent(prompt);
+        setStatus('Opens a new Claude chat with the result filled in. Send it and Claude adds the row.');
+      }
+    }
+
+    $('trSave').onclick = async () => {
+      if(!MCP || T.saved) return;
+      const r=T.summary, btn=$('trSave');
+      btn.disabled=true; btn.textContent='Saving…'; setStatus('');
+      const props = {
+        'Name': r.drill+' · '+r.score+'/'+N+' · '+r.avg.toFixed(2)+' s',
+        'date:Date:start': localIso(r.date), 'date:Date:is_datetime': 1,
+        'Drill': r.drill, 'Score': r.score, 'Accuracy': +r.acc.toFixed(4),
+        'Avg time (s)': +r.avg.toFixed(2), 'Fastest (s)': +r.fast.toFixed(2), 'Slowest (s)': +r.slow.toFixed(2),
+        'Total time (s)': +r.total.toFixed(1),
+        'Settings': r.settings, 'Missed': r.missed.join('; ')
+      };
+      try{
+        await MCP.callTool('Notion','notion-create-pages',{ parent:{ type:'data_source_id', data_source_id:NOTION_DS }, pages:[{ properties:props }] });
+        T.saved=true; btn.textContent='Saved to Notion ✓';
+        setStatus('Added to Speed Tests in Novu Jazz Academy.','good');
+      }catch(e){
+        btn.disabled=false; btn.textContent='Try again';
+        const code=e && e.code;
+        const msg = code==='needs_reauth' ? 'Notion needs reconnecting. Reconnect it in claude.ai Settings → Connectors, then try again.'
+          : code==='server_not_connected' ? 'Notion isn’t connected. Add it in claude.ai Settings → Connectors, then try again.'
+          : code==='selection_required' ? 'You have more than one Notion connection. Pick one when Claude asks, then try again.'
+          : code==='not_in_manifest' ? 'Notion isn’t allowed for this page. Allow it from the page’s permissions, then try again.'
+          : code==='blocked_by_policy' || code==='approval_required' ? 'Your organisation’s settings block this Notion action.'
+          : code==='tool_error' ? 'Notion refused the row: '+String(e.message||'').slice(0,160)
+          : code==='server_unavailable' || code==='upstream_error' ? 'Couldn’t reach Notion. Check Speed Tests before trying again, in case the row was added.'
+          : 'Couldn’t save to Notion'+(e&&e.message?': '+e.message:'.');
+        setStatus(msg,'bad');
+        if(code==='not_granted' || code==='capability_disabled' || code==='capability_removed'){ MCP=null; setupSave(); }
+      }
+    };
+    $('trCopy').onclick = async () => {
+      const txt=resultText();
+      try{ await navigator.clipboard.writeText(txt); setStatus('Copied.','good'); }
+      catch(e){
+        const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand('copy'); setStatus('Copied.','good'); }catch(_){ setStatus('Couldn’t copy on this device.','bad'); }
+        ta.remove();
+      }
+    };
+    $('trAgain').onclick = begin;
+    $('trClose').onclick = () => { $('testResult').hidden=true; setTab(TAB); window.__refresh(); };
+    $('testBtn').onclick = () => { T.active ? stop() : begin(); };
+    // No switching drills mid-test
+    $('tabs').addEventListener('click', e => { if(T.active){ e.stopPropagation(); e.preventDefault(); } }, true);
+    // Switching tabs while results are showing closes them
+    $('tabs').addEventListener('click', () => { if(!T.active) $('testResult').hidden=true; });
   })();
   /* ---------------- Phone landscape ---------------- */
   (function(){
