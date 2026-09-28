@@ -1004,10 +1004,10 @@ body.testing .tabs{opacity:.45;pointer-events:none}
       ins.forEach(i=>{ i.onmidimessage=onMsg; });
       live = ins.length>0;
       pill.hidden=!live;
-      btn.hidden=true;
+      btn.hidden=live; btn.textContent='Scan again';
       say(live
         ? 'Listening to <b>'+ins.map(i=>i.name).join(', ')+'</b>. Press the sustain pedal for the next question.'
-        : 'No MIDI keyboard found. Plug it in and it connects automatically.');
+        : 'Chrome can use MIDI, but no keyboard was found. Check the cable and the tablet’s USB setting, then tap Scan again.');
       showPlayed();
     }
     async function connect(auto){
