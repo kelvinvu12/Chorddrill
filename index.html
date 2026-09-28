@@ -242,6 +242,7 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
       <span class="label">MIDI</span>
       <button type="button" class="ghost sm" id="midiBtn">Connect keyboard</button>
       <span class="hint" id="midiStatus">Play answers on a MIDI keyboard plugged into this device. Works in Chrome.</span>
+      <label class="check only-gt"><input type="checkbox" id="midiRoot"> Ignore the chord’s root (for a left-hand bass note)</label>
     </div>
     <div class="row only-gt">
       <span class="label">Chords</span>
@@ -885,7 +886,17 @@ body.tab-dia .only-gt, body.tab-gt .only-dia{display:none}
       if(hit) answer_(hit);
       else { answer_({dataset:{v:'\u0000'}}); const fb=$('feedback'); fb.textContent='You played '+txt+'. '+fb.textContent; }
     }
+    const rootBox=$('midiRoot');
+    let ignoreRoot = store.get('midiRoot', true);
+    rootBox.checked = ignoreRoot;
+    rootBox.onchange = () => { ignoreRoot = rootBox.checked; store.set('midiRoot', ignoreRoot); };
     function noteOn(m){
+      if(TAB==='gt' && ignoreRoot && G.q && m%12===parseRoot(G.q.r).pc){
+        // left-hand root: acknowledge it, but don't count it as a guide-tone answer
+        if(!G.done && !G.picked.length) $('gtPicked').innerHTML='Root <b>'+midiName(m, pretty(G.q.r))+'</b> in the left hand. Now the guide tones.';
+        pill.classList.add('hit'); clearTimeout(flashT); flashT=setTimeout(()=>pill.classList.remove('hit'),120);
+        return;
+      }
       if(TAB==='gt'){
         if(G.q!==gRef){ gRef=G.q; held.clear(); }
         held.add(m);
